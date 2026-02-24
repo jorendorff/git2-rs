@@ -188,6 +188,12 @@ impl Oid {
         &self.raw.id
     }
 
+    /// Returns the object format (hash algorithm) of this OID.
+    #[cfg(feature = "unstable-sha256")]
+    pub fn object_format(&self) -> ObjectFormat {
+        unsafe { ObjectFormat::from_raw(self.raw.kind as raw::git_oid_t) }
+    }
+
     /// Test if this OID is all zeros.
     pub fn is_zero(&self) -> bool {
         unsafe { raw::git_oid_is_zero(&self.raw) == 1 }
@@ -512,6 +518,26 @@ mod tests {
         assert_ne!(sha1_oid, sha256_oid);
 
         Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "unstable-sha256")]
+    fn oid_object_format() {
+        use crate::ObjectFormat;
+
+        let sha1_oid = Oid::from_str(
+            "decbf2be529ab6557d5429922251e5ee36519817",
+            ObjectFormat::Sha1,
+        )
+        .unwrap();
+        assert_eq!(sha1_oid.object_format(), ObjectFormat::Sha1);
+
+        let sha256_oid = Oid::from_str(
+            "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            ObjectFormat::Sha256,
+        )
+        .unwrap();
+        assert_eq!(sha256_oid.object_format(), ObjectFormat::Sha256);
     }
 
     #[test]
